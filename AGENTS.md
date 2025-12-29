@@ -4,13 +4,18 @@
 Building an MCP server to interact with bcci.tv and get match information.
 
 ## General
-- Use python.
+- Use python. Write clean code, using constants and classes where applicable, following best practices for python.
 - Use uv for managing the project. Do not install packages globally.
+- Ask for confirmation before updating `pyproject.toml`.
 - Document code well
+
+## Code
+- Do error handling properly by using try-except blocks.
 - Make code async
 - Use FastMCP for MCP related code
 - Use httpx for HTTP requests
 - Avoid unnecessary package or function imports
+- Avoid adding unnecessary headers for API calls.
 
 ## Structure
 - The package should be able to be installed via uv, or referred locally.
