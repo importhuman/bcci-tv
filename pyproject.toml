@@ -1,5 +1,5 @@
 [project]
-name = "bcci-tv-mcp"
+name = "bcci-tv"
 version = "0.1.0"
 description = "BCCI.tv MCP server"
 readme = "README.md"
@@ -9,8 +9,15 @@ dependencies = [
     "fastmcp>=2.14.1",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project.scripts]
 bcci-tv-mcp = "bcci_tv.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bcci_tv"]
 
 [dependency-groups]
 dev = [
