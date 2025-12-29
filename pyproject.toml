@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-bcci-tv-mcp = "bcci_tv_mcp.server:main"
+bcci-tv-mcp = "bcci_tv.server:main"
 
 [dependency-groups]
 dev = [

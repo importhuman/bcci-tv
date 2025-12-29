@@ -1,7 +1,7 @@
 import pytest
 import json
-from bcci_tv_mcp.mcp.server import get_live_tournaments
-from bcci_tv_mcp.api.client import BCCIApiClient
+from bcci_tv.mcp.server import get_live_tournaments
+from bcci_tv.api.client import BCCIApiClient
 
 @pytest.mark.asyncio
 async def test_get_live_tournaments_tool(httpx_mock):

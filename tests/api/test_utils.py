@@ -1,5 +1,5 @@
 import pytest
-from bcci_tv_mcp.api.utils import filter_live_competitions
+from bcci_tv.api.utils import filter_live_competitions
 
 def test_filter_live_competitions():
     mock_data = {

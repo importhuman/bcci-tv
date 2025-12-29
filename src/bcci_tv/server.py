@@ -1,4 +1,4 @@
-from bcci_tv_mcp.mcp.server import mcp
+from bcci_tv.mcp.server import mcp
 
 def main():
     """

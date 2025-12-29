@@ -1,5 +1,5 @@
 import pytest
-from bcci_tv_mcp.api.client import BCCIApiClient
+from bcci_tv.api.client import BCCIApiClient
 
 @pytest.mark.asyncio
 async def test_get_competitions(api_client, httpx_mock):
