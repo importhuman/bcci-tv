@@ -16,6 +16,7 @@ class BCCIApiClient:
 
     class Endpoints:
         COMPETITIONS = "/feeds/competition.js"
+        STANDINGS = "/feeds/stats/{CompetitionID}-groupstandings.js"
 
     def __init__(self):
         self.client = httpx.AsyncClient(
@@ -27,18 +28,26 @@ class BCCIApiClient:
     def get_full_url(cls, endpoint: str) -> str:
         """Helper to construct full URLs for testing or logging."""
         return f"{cls.BASE_URL.rstrip('/')}/{endpoint.lstrip('/')}"
-    
+
     async def get_competitions(self) -> Dict[str, Any]:
         """Fetches competitions."""
         response = await self._make_request("GET", self.Endpoints.COMPETITIONS)
         return self._parse_jsonp(response.text)
-    
+
     async def get_live_tournaments(self) -> List[Dict[str, Any]]:
         """
         Fetches and returns a list of live cricket tournaments/competitions.
         """
         data = await self.get_competitions()
         return filter_live_competitions(data)
+
+    async def get_tournament_standings(self, competition_id: int) -> Dict[str, Any]:
+        """
+        Fetches standings for a specific tournament.
+        """
+        endpoint = self.Endpoints.STANDINGS.format(CompetitionID=competition_id)
+        response = await self._make_request("GET", endpoint)
+        return self._parse_jsonp(response.text)
 
     def _parse_jsonp(self, text: str) -> Dict[str, Any]:
         """
