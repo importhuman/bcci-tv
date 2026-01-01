@@ -1,7 +1,8 @@
 import httpx
 import logging
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+from bcci_tv.api.utils import filter_live_competitions
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +33,13 @@ class BCCIApiClient:
         response = await self._make_request("GET", self.Endpoints.COMPETITIONS)
         return self._parse_jsonp(response.text)
     
+    async def get_live_tournaments(self) -> List[Dict[str, Any]]:
+        """
+        Fetches and returns a list of live cricket tournaments/competitions.
+        """
+        data = await self.get_competitions()
+        return filter_live_competitions(data)
+
     def _parse_jsonp(self, text: str) -> Dict[str, Any]:
         """
         Parses JSONP-like response by removing the function wrapper.

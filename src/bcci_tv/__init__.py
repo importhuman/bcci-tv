@@ -1,3 +1,3 @@
-from bcci_tv.mcp.server import get_live_tournaments
+from bcci_tv.api.client import BCCIApiClient
 
-__all__ = ["get_live_tournaments"]
+__all__ = ["BCCIApiClient"]
