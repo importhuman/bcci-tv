@@ -1,6 +1,6 @@
 import pytest
 import json
-from bcci_tv.mcp.server import get_live_tournaments
+from bcci_tv.mcp.server import get_live_tournaments, get_tournament_standings
 from bcci_tv.api.client import BCCIApiClient
 
 @pytest.mark.asyncio
@@ -25,4 +25,28 @@ async def test_get_live_tournaments_tool(httpx_mock):
     result = await get_live_tournaments.fn()
 
     # Exact match assertion
+    assert result == expected_output
+
+@pytest.mark.asyncio
+async def test_get_tournament_standings_tool(httpx_mock):
+    competition_id = 326
+    # Read raw JS fixture for API mock
+    with open("tests/fixtures/standings.js", "r") as f:
+        mock_raw_response = f.read()
+
+    # Read simplified JSON fixture for assertion
+    with open("tests/fixtures/simplified_standings.json", "r") as f:
+        expected_output = json.load(f)
+
+    mock_url = BCCIApiClient.get_full_url(
+        BCCIApiClient.Endpoints.STANDINGS.format(CompetitionID=competition_id)
+    )
+
+    httpx_mock.add_response(
+        url=mock_url,
+        text=mock_raw_response,
+        status_code=200
+    )
+
+    result = await get_tournament_standings.fn(competition_id=competition_id)
     assert result == expected_output
