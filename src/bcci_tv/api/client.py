@@ -2,6 +2,7 @@ import httpx
 import logging
 import json
 import time
+import asyncio
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 from bcci_tv.api.utils import filter_live_competitions
@@ -17,8 +18,13 @@ class BCCIApiClient:
     BASE_URL = "https://scores.bcci.tv"
 
     class Endpoints:
-        COMPETITIONS = "/feeds/competition.js"
+        DOMESTIC_COMPETITIONS = "/feeds/competition.js"
+        INTERNATIONAL_COMPETITIONS = "/matchcentre/mc/competition.js"
         STANDINGS = "/feeds/stats/{CompetitionID}-groupstandings.js"
+
+    class Cache:
+        DOMESTIC_COMPETITIONS = "domestic_competitions.json"
+        INTERNATIONAL_COMPETITIONS = "intl_competitions.json"
 
     def __init__(self):
         self.client = httpx.AsyncClient(
@@ -37,47 +43,58 @@ class BCCIApiClient:
         """Helper to construct full URLs for testing or logging."""
         return f"{cls.BASE_URL.rstrip('/')}/{endpoint.lstrip('/')}"
 
-    async def get_competitions(self, use_cache: bool = True) -> Dict[str, Any]:
+    async def _get_cached_feed(self, endpoint: str, cache_filename: str, use_cache: bool = True) -> Dict[str, Any]:
         """
-        Fetches competitions, using a local cache if available and fresh.
+        Generic helper to fetch and cache API feeds.
         """
-        cache_file = self._get_cache_dir() / "competitions.json"
+        cache_file = self._get_cache_dir() / cache_filename
 
         if use_cache and cache_file.exists():
-            # Check TTL (24 hours = 86400 seconds)
             if (time.time() - cache_file.stat().st_mtime) < 86400:
                 try:
                     with open(cache_file, "r") as f:
                         return json.load(f)
                 except Exception as e:
-                    logger.warning(f"Failed to read cache: {e}")
+                    logger.warning(f"Failed to read cache {cache_filename}: {e}")
 
-        # Fetch from API
-        response = await self._make_request("GET", self.Endpoints.COMPETITIONS)
+        response = await self._make_request("GET", endpoint)
         data = self._parse_jsonp(response.text)
 
-        # Save to cache
         try:
             with open(cache_file, "w") as f:
                 json.dump(data, f)
         except Exception as e:
-            logger.warning(f"Failed to write cache: {e}")
+            logger.warning(f"Failed to write cache {cache_filename}: {e}")
 
         return data
 
-    async def get_live_tournaments(self) -> List[Dict[str, Any]]:
+    async def get_domestic_competitions(self, use_cache: bool = True) -> Dict[str, Any]:
+        """Fetches domestic competitions."""
+        return await self._get_cached_feed(self.Endpoints.DOMESTIC_COMPETITIONS, self.Cache.DOMESTIC_COMPETITIONS, use_cache)
+
+    async def get_international_competitions(self, use_cache: bool = True) -> Dict[str, Any]:
+        """Fetches international competitions."""
+        return await self._get_cached_feed(self.Endpoints.INTERNATIONAL_COMPETITIONS, self.Cache.INTERNATIONAL_COMPETITIONS, use_cache)
+
+    async def get_live_tournaments(self, circuit: str = "domestic") -> List[Dict[str, Any]]:
         """
-        Fetches and returns a list of live cricket tournaments/competitions.
-        Calls API instead of using cached response.
+        Fetches and returns a list of live cricket tournaments/competitions for a specific circuit.
         """
-        data = await self.get_competitions(use_cache=False)
+        if circuit == "international":
+            data = await self.get_international_competitions(use_cache=False)
+        else:
+            data = await self.get_domestic_competitions(use_cache=False)
         return filter_live_competitions(data)
 
-    async def get_competition_details(self, competition_id: int) -> Optional[Dict[str, Any]]:
+    async def get_competition_details(self, competition_id: int, circuit: str) -> Optional[Dict[str, Any]]:
         """
-        Retrieves full details for a specific competition from the catalog.
+        Retrieves full details for a specific competition from the specified circuit catalog.
         """
-        data = await self.get_competitions()
+        if circuit == "international":
+            data = await self.get_international_competitions()
+        else:
+            data = await self.get_domestic_competitions()
+
         all_comps = data.get("competition", [])
         str_id = str(competition_id)
         for comp in all_comps:
@@ -112,7 +129,6 @@ class BCCIApiClient:
     async def _make_request(self, method: str, endpoint: str, params: Optional[Dict[str, Any]] = None) -> httpx.Response:
         """
         Internal method to handle HTTP requests.
-        Returns the raw Response object.
         """
         try:
             response = await self.client.request(method, endpoint, params=params)

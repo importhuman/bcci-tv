@@ -1,10 +1,12 @@
 [
   {
     "CompetitionID": "326",
-    "CompetitionName": "COOCH BEHAR TROPHY ELITE"
+    "CompetitionName": "COOCH BEHAR TROPHY ELITE",
+    "circuit": "domestic"
   },
   {
     "CompetitionID": "346",
-    "CompetitionName": "COOCH BEHAR TROPHY PLATE"
+    "CompetitionName": "COOCH BEHAR TROPHY PLATE",
+    "circuit": "domestic"
   }
 ]

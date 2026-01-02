@@ -1,18 +1,22 @@
 [
   {
     "CompetitionID": "318",
-    "CompetitionName": "VIJAY HAZARE TROPHY ELITE"
+    "CompetitionName": "VIJAY HAZARE TROPHY ELITE",
+    "circuit": "domestic"
   },
   {
     "CompetitionID": "328",
-    "CompetitionName": "VIJAY MERCHANT TROPHY ELITE"
+    "CompetitionName": "VIJAY MERCHANT TROPHY ELITE",
+    "circuit": "domestic"
   },
   {
     "CompetitionID": "342",
-    "CompetitionName": "VIJAY HAZARE TROPHY PLATE"
+    "CompetitionName": "VIJAY HAZARE TROPHY PLATE",
+    "circuit": "domestic"
   },
   {
     "CompetitionID": "348",
-    "CompetitionName": "VIJAY MERCHANT TROPHY PLATE"
+    "CompetitionName": "VIJAY MERCHANT TROPHY PLATE",
+    "circuit": "domestic"
   }
 ]

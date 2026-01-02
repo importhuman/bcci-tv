@@ -12,10 +12,9 @@ async def test_get_live_tournaments_tool(httpx_mock):
     with open("tests/fixtures/live_tournaments_summary.json", "r") as f:
         expected_output = json.load(f)
 
-    mock_url = BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.COMPETITIONS)
-
+    # Default is domestic
     httpx_mock.add_response(
-        url=mock_url,
+        url=BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.DOMESTIC_COMPETITIONS),
         text=mock_raw_response,
         status_code=200
     )
@@ -27,22 +26,22 @@ async def test_get_live_tournaments_tool(httpx_mock):
     assert result == expected_output
 
 @pytest.mark.asyncio
-async def test_search_competitions_tool(httpx_mock):
+async def test_search_competitions_tool_fallback(httpx_mock):
     with open("tests/fixtures/competitions.js", "r") as f:
         mock_raw_response = f.read()
 
     with open("tests/fixtures/search_cooch_results.json", "r") as f:
         expected_output = json.load(f)
 
+    # Mock domestic (where we expect to find "COOCH")
     httpx_mock.add_response(
-        url=BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.COMPETITIONS),
+        url=BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.DOMESTIC_COMPETITIONS),
         text=mock_raw_response,
         status_code=200
     )
 
-    # Search for a known string in the fixture (e.g., "COOCH")
+    # Search without circuit - should find in domestic and stop
     result = await search_competitions.fn(query="COOCH")
-
     assert result == expected_output
 
 @pytest.mark.asyncio
@@ -79,10 +78,11 @@ async def test_get_tournament_details_tool(httpx_mock):
         expected_output = json.load(f)
 
     httpx_mock.add_response(
-        url=BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.COMPETITIONS),
+        url=BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.DOMESTIC_COMPETITIONS),
         text=mock_raw_response,
         status_code=200
     )
 
-    result = await get_tournament_details.fn(competition_id=competition_id)
+    # Must provide circuit
+    result = await get_tournament_details.fn(competition_id=competition_id, circuit="domestic")
     assert result == expected_output
