@@ -27,7 +27,7 @@ async def get_tournaments_catalog() -> str:
 @mcp.tool()
 async def search_competitions(query: str) -> list:
     """
-    Searches for tournaments/competitions/series by name to find their ID. 
+    Searches for tournaments/competitions/series by name to find their ID.
     Use this to find the CompetitionID required for other tools.
 
     Args:
@@ -80,11 +80,11 @@ async def get_tournament_standings(competition_id: int) -> dict:
     """
     Fetches the standings for a specific tournament/competition/series.
 
-    Returns a JSON object where teams are grouped by category (e.g., 'Group A') 
+    Returns a JSON object where teams are grouped by category (e.g., 'Group A')
     and sorted by 'OrderNo'.
 
-    AI Instructions: Always present this data to the user as a clean, 
-    professionally formatted Markdown table. Include columns for: 
+    AI Instructions: Always present this data to the user as a clean,
+    professionally formatted Markdown table. Include columns for:
     Pos, Team, P (Played), W (Wins), L (Losses), D (Draws), Pts (Points), and NRR (Net Run Rate).
 
     Args:

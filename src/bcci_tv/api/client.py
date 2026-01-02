@@ -36,13 +36,13 @@ class BCCIApiClient:
     def get_full_url(cls, endpoint: str) -> str:
         """Helper to construct full URLs for testing or logging."""
         return f"{cls.BASE_URL.rstrip('/')}/{endpoint.lstrip('/')}"
-    
+
     async def get_competitions(self, use_cache: bool = True) -> Dict[str, Any]:
         """
         Fetches competitions, using a local cache if available and fresh.
         """
         cache_file = self._get_cache_dir() / "competitions.json"
-        
+
         if use_cache and cache_file.exists():
             # Check TTL (24 hours = 86400 seconds)
             if (time.time() - cache_file.stat().st_mtime) < 86400:
@@ -55,14 +55,14 @@ class BCCIApiClient:
         # Fetch from API
         response = await self._make_request("GET", self.Endpoints.COMPETITIONS)
         data = self._parse_jsonp(response.text)
-        
+
         # Save to cache
         try:
             with open(cache_file, "w") as f:
                 json.dump(data, f)
         except Exception as e:
             logger.warning(f"Failed to write cache: {e}")
-            
+
         return data
 
     async def get_live_tournaments(self) -> List[Dict[str, Any]]:
@@ -84,7 +84,7 @@ class BCCIApiClient:
             if str(comp.get("CompetitionID")) == str_id:
                 return comp
         return None
-    
+
     async def get_tournament_standings(self, competition_id: int) -> Dict[str, Any]:
         """
         Fetches standings for a specific tournament.

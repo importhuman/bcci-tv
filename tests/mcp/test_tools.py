@@ -8,7 +8,7 @@ async def test_get_live_tournaments_tool(httpx_mock):
     # Read raw JS fixture for the API mock
     with open("tests/fixtures/competitions.js", "r") as f:
         mock_raw_response = f.read()
-    
+
     with open("tests/fixtures/live_tournaments_summary.json", "r") as f:
         expected_output = json.load(f)
 
@@ -30,7 +30,7 @@ async def test_get_live_tournaments_tool(httpx_mock):
 async def test_search_competitions_tool(httpx_mock):
     with open("tests/fixtures/competitions.js", "r") as f:
         mock_raw_response = f.read()
-    
+
     with open("tests/fixtures/search_cooch_results.json", "r") as f:
         expected_output = json.load(f)
 
@@ -42,7 +42,7 @@ async def test_search_competitions_tool(httpx_mock):
 
     # Search for a known string in the fixture (e.g., "COOCH")
     result = await search_competitions.fn(query="COOCH")
-    
+
     assert result == expected_output
 
 @pytest.mark.asyncio
@@ -74,7 +74,7 @@ async def test_get_tournament_details_tool(httpx_mock):
     competition_id = 326
     with open("tests/fixtures/competitions.js", "r") as f:
         mock_raw_response = f.read()
-    
+
     with open("tests/fixtures/tournament_details_326.json", "r") as f:
         expected_output = json.load(f)
 
@@ -86,5 +86,3 @@ async def test_get_tournament_details_tool(httpx_mock):
 
     result = await get_tournament_details.fn(competition_id=competition_id)
     assert result == expected_output
-
-
