@@ -19,6 +19,29 @@ def filter_live_competitions(data: Dict[str, Any]) -> List[Dict[str, Any]]:
         if comp.get("CompetitionID") in live_ids
     ]
 
+def summarize_competitions(competitions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Reduces competition objects to only include CompetitionID and CompetitionName.
+    """
+    return [
+        {
+            "CompetitionID": c.get("CompetitionID"),
+            "CompetitionName": c.get("CompetitionName")
+        }
+        for c in competitions
+    ]
+
+def search_competitions(competitions: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
+    """
+    Searches for competitions by name (case-insensitive) and returns their summaries.
+    """
+    query = query.lower()
+    filtered = [
+        c for c in competitions
+        if query in c.get("CompetitionName", "").lower()
+    ]
+    return summarize_competitions(filtered)
+
 def filter_tournament_standings(data: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
     """
     Filters and groups tournament standings by category.

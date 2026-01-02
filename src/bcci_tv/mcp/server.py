@@ -1,7 +1,12 @@
 from fastmcp import FastMCP
 import json
 from bcci_tv.api.client import BCCIApiClient
-from bcci_tv.api.utils import filter_tournament_standings, simplify_standings
+from bcci_tv.api.utils import (
+    filter_tournament_standings,
+    simplify_standings,
+    summarize_competitions,
+    search_competitions as search_competitions_util
+)
 
 # Create FastMCP instance
 mcp = FastMCP("bcci-tv")
@@ -15,13 +20,7 @@ async def get_tournaments_catalog() -> str:
     async with BCCIApiClient() as client:
         data = await client.get_competitions()
         all_comps = data.get("competition", [])
-        catalog = [
-            {
-                "CompetitionID": c.get("CompetitionID"),
-                "CompetitionName": c.get("CompetitionName")
-            }
-            for c in all_comps
-        ]
+        catalog = summarize_competitions(all_comps)
         return json.dumps(catalog, indent=2)
 
 @mcp.tool()
@@ -36,15 +35,7 @@ async def search_competitions(query: str) -> list:
     async with BCCIApiClient() as client:
         data = await client.get_competitions()
         all_comps = data.get("competition", [])
-        query = query.lower()
-        return [
-            {
-                "CompetitionID": c.get("CompetitionID"),
-                "CompetitionName": c.get("CompetitionName")
-            }
-            for c in all_comps
-            if query in c.get("CompetitionName", "").lower()
-        ]
+        return search_competitions_util(all_comps, query)
 
 @mcp.tool()
 async def get_live_tournaments() -> list:
@@ -54,13 +45,7 @@ async def get_live_tournaments() -> list:
     """
     async with BCCIApiClient() as client:
         tournaments = await client.get_live_tournaments()
-        return [
-            {
-                "CompetitionID": c.get("CompetitionID"),
-                "CompetitionName": c.get("CompetitionName")
-            }
-            for c in tournaments
-        ]
+        return summarize_competitions(tournaments)
 
 @mcp.tool()
 async def get_tournament_details(competition_id: int) -> dict:
