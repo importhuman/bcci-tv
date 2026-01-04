@@ -24,6 +24,8 @@ class BCCIApiClient:
         DOMESTIC_SCHEDULE = "/feeds/{CompetitionID}-matchschedule.js"
         INTERNATIONAL_SCHEDULE = "/feeds-international/scoringfeeds/{CompetitionID}-matchschedule.js"
         DOMESTIC_MATCH_DETAILS = "/feeds/{MatchID}-{suffix}.js"
+        INTERNATIONAL_MATCH_SUMMARY = "/feeds-international/scoringfeeds/{MatchID}-matchsummary.js"
+        INTERNATIONAL_MATCH_INNINGS = "https://www.bcci.tv/fetch-inning?inning={innings_str}&competitionId={MatchID}&section=scorecard"
 
     class Cache:
         DOMESTIC_COMPETITIONS = "domestic_competitions.json"
@@ -125,7 +127,7 @@ class BCCIApiClient:
         response = await self._make_request("GET", endpoint)
         return self._parse_jsonp(response.text)
 
-    async def get_match_summary(self, match_id: int, innings: Optional[int] = None) -> Dict[str, Any]:
+    async def get_domestic_match_summary(self, match_id: int, innings: Optional[int] = None) -> Dict[str, Any]:
         """
         Fetches the match summary for a domestic match.
         If innings is provided (1-4), fetches details for that specific innings.
@@ -153,17 +155,54 @@ class BCCIApiClient:
 
         return data
 
+    async def get_international_match_summary(self, match_id: int, innings: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Fetches the match summary for an international match.
+        If innings is provided (1-4), fetches details for that specific innings.
+        """
+        if innings is not None and (innings < 1 or innings > 4):
+            raise ValueError("Innings must be between 1 and 4")
+
+        if innings is None:
+            endpoint = self.Endpoints.INTERNATIONAL_MATCH_SUMMARY.format(MatchID=match_id)
+            response = await self._make_request("GET", endpoint)
+            return self._parse_jsonp(response.text)
+        else:
+            innings_str = f"Innings{innings}"
+            url = self.Endpoints.INTERNATIONAL_MATCH_INNINGS.format(
+                MatchID=match_id,
+                innings_str=innings_str
+            )
+            response = await self._make_request("GET", url)
+            data = self._parse_jsonp(response.text)
+
+            # Filter for specific keys
+            if innings_str in data:
+                inner_data = data[innings_str]
+                keys_to_retain = ["BattingCard", "BowlingCard", "Extras", "FallOfWickets"]
+                data[innings_str] = {
+                    k: inner_data.get(k) for k in keys_to_retain if k in inner_data
+                }
+            return data
+
     def _parse_jsonp(self, text: str) -> Dict[str, Any]:
         """
         Parses JSONP-like response by removing the function wrapper.
         Example: oncomptetion({...}); -> {...}
         """
+        text = text.strip()
         try:
+            # If it starts with { or [, it is likely pure JSON
+            if text.startswith(("{", "[")):
+                return json.loads(text)
+
+            # Otherwise, look for JSONP pattern: callback(...)
             start = text.find('(')
             end = text.rfind(')')
             if start != -1 and end != -1:
                 json_str = text[start + 1:end]
                 return json.loads(json_str)
+
             return json.loads(text)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON from response: {str(e)}")

@@ -6,7 +6,8 @@ from bcci_tv.mcp.server import (
     search_competitions,
     get_tournament_details,
     get_tournament_schedule,
-    get_match_summary
+    get_domestic_match_summary,
+    get_intl_match_summary
 )
 from bcci_tv.api.client import BCCIApiClient
 
@@ -122,12 +123,12 @@ async def test_get_tournament_schedule_tool_intl(httpx_mock):
     assert all(match["MatchStatus"].lower() == "upcoming" for match in result)
 
 @pytest.mark.asyncio
-async def test_get_match_summary_tool(httpx_mock):
+async def test_get_domestic_match_summary_tool(httpx_mock):
     match_id = 999
 
     # 1. Mock overall summary
     with open("tests/fixtures/match_summary.js", "r") as f:
-        summary_raw = f.read() or "callback({\"CurrentInnings\": \"2\"});"
+        summary_raw = f.read() or "callback({\"CurrentInnings\": \"1\"});"
 
     summary_url = BCCIApiClient.get_full_url(
         BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(MatchID=match_id, suffix="matchsummary")
@@ -137,6 +138,7 @@ async def test_get_match_summary_tool(httpx_mock):
     # 2. Mock Innings 1
     with open("tests/fixtures/match_innings1.js", "r") as f:
         innings_raw = f.read() or "callback({\"Innings1\": {\"BattingCard\": []}});"
+
     innings_url = BCCIApiClient.get_full_url(
         BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(MatchID=match_id, suffix="Innings1")
     )
@@ -146,9 +148,47 @@ async def test_get_match_summary_tool(httpx_mock):
     innings2_url = BCCIApiClient.get_full_url(
         BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(MatchID=match_id, suffix="Innings2")
     )
-
     httpx_mock.add_response(url=innings2_url, text=innings_raw, status_code=200)
-    result = await get_match_summary.fn(match_id=match_id)
+
+    result = await get_domestic_match_summary.fn(match_id=match_id)
+
+    assert "overall" in result
+    assert "innings_details" in result
+    assert len(result["innings_details"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_get_intl_match_summary_tool(httpx_mock):
+    # TODO: Use new international match and innings fixtures instead of reusing domestic ones
+    match_id = 888
+
+    # 1. Mock overall summary (Reuse domestic fixture)
+    with open("tests/fixtures/match_summary.js", "r") as f:
+        summary_raw = f.read()
+
+    summary_url = BCCIApiClient.get_full_url(
+        BCCIApiClient.Endpoints.INTERNATIONAL_MATCH_SUMMARY.format(MatchID=match_id)
+    )
+    httpx_mock.add_response(url=summary_url, text=summary_raw, status_code=200)
+
+    # 2. Mock Innings 1 (Reuse domestic fixture)
+    with open("tests/fixtures/match_innings1.js", "r") as f:
+        innings_raw = f.read()
+
+    innings1_url = BCCIApiClient.Endpoints.INTERNATIONAL_MATCH_INNINGS.format(
+        MatchID=match_id,
+        innings_str="Innings1"
+    )
+    httpx_mock.add_response(url=innings1_url, text=innings_raw, status_code=200)
+
+    # 3. Mock Innings 2 (Reuse domestic fixture)
+    innings2_url = BCCIApiClient.Endpoints.INTERNATIONAL_MATCH_INNINGS.format(
+        MatchID=match_id,
+        innings_str="Innings2"
+    )
+    httpx_mock.add_response(url=innings2_url, text=innings_raw, status_code=200)
+
+    result = await get_intl_match_summary.fn(match_id=match_id)
 
     assert "overall" in result
     assert "innings_details" in result

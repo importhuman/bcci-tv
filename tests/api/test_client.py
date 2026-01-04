@@ -103,8 +103,11 @@ async def test_get_match_summary_overall(api_client, httpx_mock):
 
     httpx_mock.add_response(url=mock_url, text=mock_raw_response, status_code=200)
 
-    result = await api_client.get_match_summary(match_id)
-    assert isinstance(result, dict)
+    result = await api_client.get_domestic_match_summary(match_id)
+    assert "MatchSummary" in result
+    assert isinstance(result["MatchSummary"], list)
+    assert len(result["MatchSummary"]) == 1
+    assert "MatchID","CurrentInnings" in result["MatchSummary"][0]
 
 @pytest.mark.asyncio
 async def test_get_match_summary_innings(api_client, httpx_mock):
@@ -118,7 +121,68 @@ async def test_get_match_summary_innings(api_client, httpx_mock):
 
     httpx_mock.add_response(url=mock_url, text=mock_raw_response, status_code=200)
 
-    result = await api_client.get_match_summary(match_id, innings=1)
+    result = await api_client.get_domestic_match_summary(match_id, innings=1)
     assert "Innings1" in result
     # Verify filtering
     assert list(result["Innings1"].keys()) == ["BattingCard", "BowlingCard", "Extras", "FallOfWickets"]
+
+@pytest.mark.asyncio
+async def test_get_international_match_summary_overall(api_client, httpx_mock):
+    # TODO: Use new international match fixture instead of reusing domestic one
+    # Reuse domestic fixture for structure check
+    with open("tests/fixtures/match_summary.js", "r") as f:
+        mock_raw_response = f.read()
+
+    match_id = 888
+    mock_url = BCCIApiClient.get_full_url(
+        BCCIApiClient.Endpoints.INTERNATIONAL_MATCH_SUMMARY.format(MatchID=match_id)
+    )
+
+    httpx_mock.add_response(url=mock_url, text=mock_raw_response, status_code=200)
+
+    result = await api_client.get_international_match_summary(match_id)
+    assert "MatchSummary" in result
+    assert isinstance(result["MatchSummary"], list)
+    assert len(result["MatchSummary"]) == 1
+    assert "MatchID","CurrentInnings" in result["MatchSummary"][0]
+
+@pytest.mark.asyncio
+async def test_get_international_match_summary_innings(api_client, httpx_mock):
+    # TODO: Use new international innings fixture instead of reusing domestic one
+    # Reuse domestic fixture
+    with open("tests/fixtures/match_innings1.js", "r") as f:
+        mock_raw_response = f.read()
+
+    match_id = 888
+    innings_str = "Innings1"
+    # Use full URL directly as it is not relative to scores.bcci.tv
+    mock_url = BCCIApiClient.Endpoints.INTERNATIONAL_MATCH_INNINGS.format(
+        MatchID=match_id,
+        innings_str=innings_str
+    )
+
+    httpx_mock.add_response(url=mock_url, text=mock_raw_response, status_code=200)
+
+    result = await api_client.get_international_match_summary(match_id, innings=1)
+    assert innings_str in result
+    # Verify filtering
+    assert list(result[innings_str].keys()) == ["BattingCard", "BowlingCard", "Extras", "FallOfWickets"]
+
+def test_parse_jsonp():
+    client = BCCIApiClient()
+
+    # 1. Standard JSONP
+    jsonp_text = "callback({\"key\": \"value\"});"
+    assert client._parse_jsonp(jsonp_text) == {"key": "value"}
+
+    # 2. Pure JSON
+    pure_json = "{\"key\": \"value\"}"
+    assert client._parse_jsonp(pure_json) == {"key": "value"}
+
+    # 3. Pure JSON containing parentheses (the edge case)
+    json_with_parens = "{\"graph\": \"(some data)\", \"id\": 1}"
+    assert client._parse_jsonp(json_with_parens) == {"graph": "(some data)", "id": 1}
+
+    # 4. JSONP with different wrapper name
+    different_wrapper = "onScoringMatchsummary({\"status\": true});"
+    assert client._parse_jsonp(different_wrapper) == {"status": True}
