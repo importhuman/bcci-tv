@@ -1,6 +1,11 @@
 import pytest
 import json
-from bcci_tv.api.utils import filter_live_competitions, filter_tournament_standings, simplify_standings
+from bcci_tv.api.utils import (
+    filter_live_competitions,
+    filter_tournament_standings,
+    simplify_standings,
+    filter_matches_by_status
+)
 from bcci_tv.api.client import BCCIApiClient
 
 def test_filter_live_competitions():
@@ -55,3 +60,23 @@ def test_filter_tournament_standings():
 def test_filter_tournament_standings_empty():
     assert filter_tournament_standings({}) == {}
     assert filter_tournament_standings({"category": []}) == {}
+
+def test_filter_matches_by_status():
+    # Read and parse the international schedule fixture
+    with open("tests/fixtures/intl_schedule.js", "r") as f:
+        raw_text = f.read()
+
+    client = BCCIApiClient()
+    parsed_data = client._parse_jsonp(raw_text)
+
+    # Assert upcoming: 5 matches
+    upcoming = filter_matches_by_status(parsed_data, "upcoming")
+    assert len(upcoming) == 5
+
+    # Assert live: 0 matches
+    live = filter_matches_by_status(parsed_data, "live")
+    assert len(live) == 0
+
+    # Assert post: 0 matches
+    post = filter_matches_by_status(parsed_data, "post")
+    assert len(post) == 0

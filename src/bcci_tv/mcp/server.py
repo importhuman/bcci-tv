@@ -6,7 +6,8 @@ from bcci_tv.api.utils import (
     filter_tournament_standings,
     simplify_standings,
     summarize_competitions,
-    search_competitions as search_competitions_util
+    search_competitions as search_competitions_util,
+    filter_matches_by_status
 )
 
 # Create FastMCP instance
@@ -105,6 +106,28 @@ async def get_tournament_details(competition_id: int, circuit: str) -> dict:
         if details:
             return details
         return {"error": f"Competition {competition_id} not found in {circuit} circuit"}
+
+@mcp.tool()
+async def get_tournament_schedule(competition_id: int, circuit: str, match_status: Optional[str] = None) -> list:
+    """
+    Fetches the match schedule for a specific tournament.
+
+    Args:
+        competition_id (int): The unique ID of the competition.
+        circuit (str): The circuit ('domestic' or 'international').
+        match_status (str, optional): Filter matches by their status.
+            Supported values:
+            - 'upcoming': For matches that are yet to start.
+            - 'live': For matches currently in progress.
+            - 'post': For matches that have already completed.
+    """
+    async with BCCIApiClient() as client:
+        data = await client.get_tournament_schedule(competition_id, circuit)
+
+        if match_status:
+            return filter_matches_by_status(data, match_status)
+
+        return data.get("Matchsummary") or []
 
 @mcp.tool()
 async def get_tournament_standings(competition_id: int) -> dict:

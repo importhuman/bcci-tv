@@ -97,3 +97,16 @@ def simplify_standings(standings: Dict[str, List[Dict[str, Any]]]) -> Dict[str, 
         simplified[category] = simplified_teams
 
     return simplified
+
+def filter_matches_by_status(data: Dict[str, Any], match_status: str) -> List[Dict[str, Any]]:
+    """
+    Filters the matches in the API response by their MatchStatus.
+    Status can be 'upcoming', 'live', or 'post'.
+    """
+    match_details = data.get("Matchsummary") or []
+    target_status = match_status.lower()
+
+    return [
+        match for match in match_details
+        if match.get("MatchStatus", "").lower() == target_status
+    ]

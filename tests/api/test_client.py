@@ -66,3 +66,27 @@ async def test_get_tournament_standings(api_client, httpx_mock):
     for field in expected_fields:
         assert field in result["points"][0], f"Field '{field}' missing from response"
         assert isinstance(result["points"][0][field], str), f"Field '{field}' should be a string"
+
+@pytest.mark.asyncio
+async def test_get_tournament_schedule_intl(api_client, httpx_mock):
+    # Read from fixture file
+    with open("tests/fixtures/intl_schedule.js", "r") as f:
+        mock_raw_response = f.read()
+
+    competition_id = 236
+    mock_url = BCCIApiClient.get_full_url(
+        BCCIApiClient.Endpoints.INTERNATIONAL_SCHEDULE.format(CompetitionID=competition_id)
+    )
+
+    httpx_mock.add_response(
+        url=mock_url,
+        text=mock_raw_response,
+        status_code=200
+    )
+
+    result = await api_client.get_tournament_schedule(competition_id, circuit="international")
+
+    assert isinstance(result, dict)
+    assert "Matchsummary" in result
+    assert isinstance(result["Matchsummary"], list)
+    assert len(result["Matchsummary"]) == 5

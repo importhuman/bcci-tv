@@ -21,6 +21,8 @@ class BCCIApiClient:
         DOMESTIC_COMPETITIONS = "/feeds/competition.js"
         INTERNATIONAL_COMPETITIONS = "/matchcentre/mc/competition.js"
         STANDINGS = "/feeds/stats/{CompetitionID}-groupstandings.js"
+        DOMESTIC_SCHEDULE = "/feeds/{CompetitionID}-matchschedule.js"
+        INTERNATIONAL_SCHEDULE = "/feeds-international/scoringfeeds/{CompetitionID}-matchschedule.js"
 
     class Cache:
         DOMESTIC_COMPETITIONS = "domestic_competitions.json"
@@ -107,6 +109,18 @@ class BCCIApiClient:
         Fetches standings for a specific tournament.
         """
         endpoint = self.Endpoints.STANDINGS.format(CompetitionID=competition_id)
+        response = await self._make_request("GET", endpoint)
+        return self._parse_jsonp(response.text)
+
+    async def get_tournament_schedule(self, competition_id: int, circuit: str) -> Dict[str, Any]:
+        """
+        Fetches the match schedule for a specific tournament.
+        """
+        if circuit == "international":
+            endpoint = self.Endpoints.INTERNATIONAL_SCHEDULE.format(CompetitionID=competition_id)
+        else:
+            endpoint = self.Endpoints.DOMESTIC_SCHEDULE.format(CompetitionID=competition_id)
+
         response = await self._make_request("GET", endpoint)
         return self._parse_jsonp(response.text)
 

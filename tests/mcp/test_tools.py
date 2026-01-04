@@ -1,6 +1,12 @@
 import pytest
 import json
-from bcci_tv.mcp.server import get_live_tournaments, get_tournament_standings, search_competitions, get_tournament_details
+from bcci_tv.mcp.server import (
+    get_live_tournaments,
+    get_tournament_standings,
+    search_competitions,
+    get_tournament_details,
+    get_tournament_schedule
+)
 from bcci_tv.api.client import BCCIApiClient
 
 @pytest.mark.asyncio
@@ -86,3 +92,30 @@ async def test_get_tournament_details_tool(httpx_mock):
     # Must provide circuit
     result = await get_tournament_details.fn(competition_id=competition_id, circuit="domestic")
     assert result == expected_output
+
+@pytest.mark.asyncio
+async def test_get_tournament_schedule_tool_intl(httpx_mock):
+    competition_id = 236
+    # Read raw JS fixture for API mock
+    with open("tests/fixtures/intl_schedule.js", "r") as f:
+        mock_raw_response = f.read()
+
+    mock_url = BCCIApiClient.get_full_url(
+        BCCIApiClient.Endpoints.INTERNATIONAL_SCHEDULE.format(CompetitionID=competition_id)
+    )
+
+    httpx_mock.add_response(
+        url=mock_url,
+        text=mock_raw_response,
+        status_code=200
+    )
+
+    # Test upcoming filter
+    result = await get_tournament_schedule.fn(
+        competition_id=competition_id,
+        circuit="international",
+        match_status="upcoming"
+    )
+
+    assert len(result) == 5
+    assert all(match["MatchStatus"].lower() == "upcoming" for match in result)
