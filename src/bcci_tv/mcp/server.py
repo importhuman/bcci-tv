@@ -1,5 +1,5 @@
 from fastmcp import FastMCP
-import json
+import json, asyncio
 from typing import Optional
 from bcci_tv.api.client import BCCIApiClient
 from bcci_tv.api.utils import (
@@ -148,3 +148,49 @@ async def get_tournament_standings(competition_id: int) -> dict:
         raw_data = await client.get_tournament_standings(competition_id)
         filtered = filter_tournament_standings(raw_data)
         return simplify_standings(filtered)
+
+@mcp.tool()
+async def get_match_summary(match_id: int, innings: Optional[int] = None) -> dict:
+    """
+    Fetches the summary for a specific match.
+    If no innings is specified, it automatically retrieves the overall summary
+    and all completed innings details.
+
+    Args:
+        match_id (int): The unique ID of the match.
+        innings (int, optional): Specific innings number (1-4) to retrieve.
+    """
+    async with BCCIApiClient() as client:
+        # 1. If user specified a particular innings, get only that.
+        if innings is not None:
+            return await client.get_match_summary(match_id, innings)
+
+        # 2. Get the match summary without any innings (overall summary).
+        overall_data = await client.get_match_summary(match_id)
+
+        # Match data is nested within 'MatchSummary' list
+        match_summary_list = overall_data.get("MatchSummary", [])
+        overall_summary = match_summary_list[0] if match_summary_list else {}
+
+        # 3. Use CurrentInnings to determine how many innings to fetch.
+        # User confirmed we can assume this is a string value.
+        current_innings_str = overall_summary.get("CurrentInnings", "0")
+        try:
+            num_innings = int(current_innings_str)
+        except (ValueError, TypeError):
+            num_innings = 0
+
+        # 4. Collect details for each innings concurrently.
+        innings_details = []
+        if num_innings > 0:
+            tasks = [client.get_match_summary(match_id, i) for i in range(1, num_innings + 1)]
+            innings_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            for i, result in enumerate(innings_results):
+                if not isinstance(result, Exception):
+                    innings_details.append(result)
+
+        return {
+            "overall": overall_summary,
+            "innings_details": innings_details
+        }

@@ -23,6 +23,7 @@ class BCCIApiClient:
         STANDINGS = "/feeds/stats/{CompetitionID}-groupstandings.js"
         DOMESTIC_SCHEDULE = "/feeds/{CompetitionID}-matchschedule.js"
         INTERNATIONAL_SCHEDULE = "/feeds-international/scoringfeeds/{CompetitionID}-matchschedule.js"
+        DOMESTIC_MATCH_DETAILS = "/feeds/{MatchID}-{suffix}.js"
 
     class Cache:
         DOMESTIC_COMPETITIONS = "domestic_competitions.json"
@@ -123,6 +124,34 @@ class BCCIApiClient:
 
         response = await self._make_request("GET", endpoint)
         return self._parse_jsonp(response.text)
+
+    async def get_match_summary(self, match_id: int, innings: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Fetches the match summary for a domestic match.
+        If innings is provided (1-4), fetches details for that specific innings.
+        """
+        if innings is not None and (innings < 1 or innings > 4):
+            raise ValueError("Innings must be between 1 and 4")
+
+        suffix = f"Innings{innings}" if innings is not None else "matchsummary"
+        endpoint = self.Endpoints.DOMESTIC_MATCH_DETAILS.format(
+            MatchID=match_id,
+            suffix=suffix
+        )
+        response = await self._make_request("GET", endpoint)
+        data = self._parse_jsonp(response.text)
+
+        # If a specific innings was requested, filter the nested object
+        if innings is not None:
+            innings_key = f"Innings{innings}"
+            if innings_key in data:
+                inner_data = data[innings_key]
+                keys_to_retain = ["BattingCard", "BowlingCard", "Extras", "FallOfWickets"]
+                data[innings_key] = {
+                    k: inner_data.get(k) for k in keys_to_retain if k in inner_data
+                }
+
+        return data
 
     def _parse_jsonp(self, text: str) -> Dict[str, Any]:
         """

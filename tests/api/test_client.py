@@ -90,3 +90,35 @@ async def test_get_tournament_schedule_intl(api_client, httpx_mock):
     assert "Matchsummary" in result
     assert isinstance(result["Matchsummary"], list)
     assert len(result["Matchsummary"]) == 5
+
+@pytest.mark.asyncio
+async def test_get_match_summary_overall(api_client, httpx_mock):
+    with open("tests/fixtures/match_summary.js", "r") as f:
+        mock_raw_response = f.read() or "callback({\"status\": true, \"CurrentInnings\": \"1\"});"
+
+    match_id = 999
+    mock_url = BCCIApiClient.get_full_url(
+        BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(MatchID=match_id, suffix="matchsummary")
+    )
+
+    httpx_mock.add_response(url=mock_url, text=mock_raw_response, status_code=200)
+
+    result = await api_client.get_match_summary(match_id)
+    assert isinstance(result, dict)
+
+@pytest.mark.asyncio
+async def test_get_match_summary_innings(api_client, httpx_mock):
+    with open("tests/fixtures/match_innings1.js", "r") as f:
+        mock_raw_response = f.read() or "callback({\"Innings1\": {\"BattingCard\": []}});"
+
+    match_id = 999
+    mock_url = BCCIApiClient.get_full_url(
+        BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(MatchID=match_id, suffix="Innings1")
+    )
+
+    httpx_mock.add_response(url=mock_url, text=mock_raw_response, status_code=200)
+
+    result = await api_client.get_match_summary(match_id, innings=1)
+    assert "Innings1" in result
+    # Verify filtering
+    assert list(result["Innings1"].keys()) == ["BattingCard", "BowlingCard", "Extras", "FallOfWickets"]
