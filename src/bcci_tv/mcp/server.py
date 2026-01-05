@@ -1,5 +1,6 @@
 from fastmcp import FastMCP
-import json, asyncio
+import json
+import asyncio
 from typing import Optional
 from bcci_tv.api.client import BCCIApiClient
 from bcci_tv.api.utils import (
@@ -7,11 +8,12 @@ from bcci_tv.api.utils import (
     simplify_standings,
     summarize_competitions,
     search_competitions as search_competitions_util,
-    filter_matches_by_status
+    filter_matches_by_status,
 )
 
 # Create FastMCP instance
 mcp = FastMCP("bcci-tv")
+
 
 @mcp.resource("tournaments://domestic/catalog")
 async def get_domestic_tournaments_catalog() -> str:
@@ -25,6 +27,7 @@ async def get_domestic_tournaments_catalog() -> str:
         catalog = summarize_competitions(all_comps)
         return json.dumps(catalog, indent=2)
 
+
 @mcp.resource("tournaments://international/catalog")
 async def get_international_tournaments_catalog() -> str:
     """
@@ -36,6 +39,7 @@ async def get_international_tournaments_catalog() -> str:
         all_comps = data.get("competition", [])
         catalog = summarize_competitions(all_comps)
         return json.dumps(catalog, indent=2)
+
 
 @mcp.tool()
 async def search_competitions(query: str, circuit: Optional[str] = None) -> list:
@@ -77,6 +81,7 @@ async def search_competitions(query: str, circuit: Optional[str] = None) -> list
 
         return results
 
+
 @mcp.tool()
 async def get_live_tournaments(circuit: Optional[str] = None) -> list:
     """
@@ -90,6 +95,7 @@ async def get_live_tournaments(circuit: Optional[str] = None) -> list:
     async with BCCIApiClient() as client:
         tournaments = await client.get_live_tournaments(circuit=target_circuit)
         return summarize_competitions(tournaments, circuit=target_circuit)
+
 
 @mcp.tool()
 async def get_tournament_details(competition_id: int, circuit: str) -> dict:
@@ -107,8 +113,11 @@ async def get_tournament_details(competition_id: int, circuit: str) -> dict:
             return details
         return {"error": f"Competition {competition_id} not found in {circuit} circuit"}
 
+
 @mcp.tool()
-async def get_tournament_schedule(competition_id: int, circuit: str, match_status: Optional[str] = None) -> list:
+async def get_tournament_schedule(
+    competition_id: int, circuit: str, match_status: Optional[str] = None
+) -> list:
     """
     Fetches the match schedule for a specific tournament.
 
@@ -128,6 +137,7 @@ async def get_tournament_schedule(competition_id: int, circuit: str, match_statu
             return filter_matches_by_status(data, match_status)
 
         return data.get("Matchsummary") or []
+
 
 @mcp.tool()
 async def get_tournament_standings(competition_id: int) -> dict:
@@ -149,8 +159,11 @@ async def get_tournament_standings(competition_id: int) -> dict:
         filtered = filter_tournament_standings(raw_data)
         return simplify_standings(filtered)
 
+
 @mcp.tool()
-async def get_domestic_match_summary(match_id: int, innings: Optional[int] = None) -> dict:
+async def get_domestic_match_summary(
+    match_id: int, innings: Optional[int] = None
+) -> dict:
     """
     Fetches the summary for a specific domestic match.
     If no innings is specified, it automatically retrieves the overall summary
@@ -183,17 +196,19 @@ async def get_domestic_match_summary(match_id: int, innings: Optional[int] = Non
         # 4. Collect details for each innings concurrently.
         innings_details = []
         if num_innings > 0:
-            tasks = [client.get_domestic_match_summary(match_id, i) for i in range(1, num_innings + 1)]
+            tasks = [
+                client.get_domestic_match_summary(match_id, i)
+                for i in range(1, num_innings + 1)
+            ]
             innings_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for i, result in enumerate(innings_results):
                 if not isinstance(result, Exception):
                     innings_details.append(result)
 
-        return {
-            "overall": overall_summary,
-            "innings_details": innings_details
-        }
+        return {"overall": overall_summary, "innings_details": innings_details}
+
+
 @mcp.tool()
 async def get_intl_match_summary(match_id: int, innings: Optional[int] = None) -> dict:
     """
@@ -227,14 +242,14 @@ async def get_intl_match_summary(match_id: int, innings: Optional[int] = None) -
         # 4. Collect details for each innings concurrently.
         innings_details = []
         if num_innings > 0:
-            tasks = [client.get_international_match_summary(match_id, i) for i in range(1, num_innings + 1)]
+            tasks = [
+                client.get_international_match_summary(match_id, i)
+                for i in range(1, num_innings + 1)
+            ]
             innings_results = await asyncio.gather(*tasks, return_exceptions=True)
 
             for i, result in enumerate(innings_results):
                 if not isinstance(result, Exception):
                     innings_details.append(result)
 
-        return {
-            "overall": overall_summary,
-            "innings_details": innings_details
-        }
+        return {"overall": overall_summary, "innings_details": innings_details}

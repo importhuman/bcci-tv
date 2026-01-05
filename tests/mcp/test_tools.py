@@ -7,9 +7,10 @@ from bcci_tv.mcp.server import (
     get_tournament_details,
     get_tournament_schedule,
     get_domestic_match_summary,
-    get_intl_match_summary
+    get_intl_match_summary,
 )
 from bcci_tv.api.client import BCCIApiClient
+
 
 @pytest.mark.asyncio
 async def test_get_live_tournaments_tool(httpx_mock):
@@ -24,7 +25,7 @@ async def test_get_live_tournaments_tool(httpx_mock):
     httpx_mock.add_response(
         url=BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.DOMESTIC_COMPETITIONS),
         text=mock_raw_response,
-        status_code=200
+        status_code=200,
     )
 
     # Call the underlying function directly
@@ -32,6 +33,7 @@ async def test_get_live_tournaments_tool(httpx_mock):
 
     # Assert against fixture
     assert result == expected_output
+
 
 @pytest.mark.asyncio
 async def test_search_competitions_tool_fallback(httpx_mock):
@@ -45,12 +47,13 @@ async def test_search_competitions_tool_fallback(httpx_mock):
     httpx_mock.add_response(
         url=BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.DOMESTIC_COMPETITIONS),
         text=mock_raw_response,
-        status_code=200
+        status_code=200,
     )
 
     # Search without circuit - should find in domestic and stop
     result = await search_competitions.fn(query="COOCH")
     assert result == expected_output
+
 
 @pytest.mark.asyncio
 async def test_get_tournament_standings_tool(httpx_mock):
@@ -67,14 +70,11 @@ async def test_get_tournament_standings_tool(httpx_mock):
         BCCIApiClient.Endpoints.STANDINGS.format(CompetitionID=competition_id)
     )
 
-    httpx_mock.add_response(
-        url=mock_url,
-        text=mock_raw_response,
-        status_code=200
-    )
+    httpx_mock.add_response(url=mock_url, text=mock_raw_response, status_code=200)
 
     result = await get_tournament_standings.fn(competition_id=competition_id)
     assert result == expected_output
+
 
 @pytest.mark.asyncio
 async def test_get_tournament_details_tool(httpx_mock):
@@ -88,12 +88,15 @@ async def test_get_tournament_details_tool(httpx_mock):
     httpx_mock.add_response(
         url=BCCIApiClient.get_full_url(BCCIApiClient.Endpoints.DOMESTIC_COMPETITIONS),
         text=mock_raw_response,
-        status_code=200
+        status_code=200,
     )
 
     # Must provide circuit
-    result = await get_tournament_details.fn(competition_id=competition_id, circuit="domestic")
+    result = await get_tournament_details.fn(
+        competition_id=competition_id, circuit="domestic"
+    )
     assert result == expected_output
+
 
 @pytest.mark.asyncio
 async def test_get_tournament_schedule_tool_intl(httpx_mock):
@@ -103,24 +106,21 @@ async def test_get_tournament_schedule_tool_intl(httpx_mock):
         mock_raw_response = f.read()
 
     mock_url = BCCIApiClient.get_full_url(
-        BCCIApiClient.Endpoints.INTERNATIONAL_SCHEDULE.format(CompetitionID=competition_id)
+        BCCIApiClient.Endpoints.INTERNATIONAL_SCHEDULE.format(
+            CompetitionID=competition_id
+        )
     )
 
-    httpx_mock.add_response(
-        url=mock_url,
-        text=mock_raw_response,
-        status_code=200
-    )
+    httpx_mock.add_response(url=mock_url, text=mock_raw_response, status_code=200)
 
     # Test upcoming filter
     result = await get_tournament_schedule.fn(
-        competition_id=competition_id,
-        circuit="international",
-        match_status="upcoming"
+        competition_id=competition_id, circuit="international", match_status="upcoming"
     )
 
     assert len(result) == 5
     assert all(match["MatchStatus"].lower() == "upcoming" for match in result)
+
 
 @pytest.mark.asyncio
 async def test_get_domestic_match_summary_tool(httpx_mock):
@@ -128,25 +128,31 @@ async def test_get_domestic_match_summary_tool(httpx_mock):
 
     # 1. Mock overall summary
     with open("tests/fixtures/match_summary.js", "r") as f:
-        summary_raw = f.read() or "callback({\"CurrentInnings\": \"1\"});"
+        summary_raw = f.read() or 'callback({"CurrentInnings": "1"});'
 
     summary_url = BCCIApiClient.get_full_url(
-        BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(MatchID=match_id, suffix="matchsummary")
+        BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(
+            MatchID=match_id, suffix="matchsummary"
+        )
     )
     httpx_mock.add_response(url=summary_url, text=summary_raw, status_code=200)
 
     # 2. Mock Innings 1
     with open("tests/fixtures/match_innings1.js", "r") as f:
-        innings_raw = f.read() or "callback({\"Innings1\": {\"BattingCard\": []}});"
+        innings_raw = f.read() or 'callback({"Innings1": {"BattingCard": []}});'
 
     innings_url = BCCIApiClient.get_full_url(
-        BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(MatchID=match_id, suffix="Innings1")
+        BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(
+            MatchID=match_id, suffix="Innings1"
+        )
     )
     httpx_mock.add_response(url=innings_url, text=innings_raw, status_code=200)
 
     # 3. Mock Innings 2 (reusing fixture for simplicity)
     innings2_url = BCCIApiClient.get_full_url(
-        BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(MatchID=match_id, suffix="Innings2")
+        BCCIApiClient.Endpoints.DOMESTIC_MATCH_DETAILS.format(
+            MatchID=match_id, suffix="Innings2"
+        )
     )
     httpx_mock.add_response(url=innings2_url, text=innings_raw, status_code=200)
 
@@ -176,15 +182,13 @@ async def test_get_intl_match_summary_tool(httpx_mock):
         innings_raw = f.read()
 
     innings1_url = BCCIApiClient.Endpoints.INTERNATIONAL_MATCH_INNINGS.format(
-        MatchID=match_id,
-        innings_str="Innings1"
+        MatchID=match_id, innings_str="Innings1"
     )
     httpx_mock.add_response(url=innings1_url, text=innings_raw, status_code=200)
 
     # 3. Mock Innings 2 (Reuse domestic fixture)
     innings2_url = BCCIApiClient.Endpoints.INTERNATIONAL_MATCH_INNINGS.format(
-        MatchID=match_id,
-        innings_str="Innings2"
+        MatchID=match_id, innings_str="Innings2"
     )
     httpx_mock.add_response(url=innings2_url, text=innings_raw, status_code=200)
 

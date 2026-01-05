@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+
 def filter_live_competitions(data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Filters the competitions list to only include those marked as live.
@@ -14,12 +15,12 @@ def filter_live_competitions(data: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     all_competitions = data.get("competition", [])
 
-    return [
-        comp for comp in all_competitions
-        if comp.get("CompetitionID") in live_ids
-    ]
+    return [comp for comp in all_competitions if comp.get("CompetitionID") in live_ids]
 
-def summarize_competitions(competitions: List[Dict[str, Any]], circuit: Optional[str] = None) -> List[Dict[str, Any]]:
+
+def summarize_competitions(
+    competitions: List[Dict[str, Any]], circuit: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """
     Reduces competition objects to only include CompetitionID and CompetitionName.
     Optionally injects the circuit name.
@@ -28,25 +29,30 @@ def summarize_competitions(competitions: List[Dict[str, Any]], circuit: Optional
     for c in competitions:
         summary = {
             "CompetitionID": c.get("CompetitionID"),
-            "CompetitionName": c.get("CompetitionName")
+            "CompetitionName": c.get("CompetitionName"),
         }
         if circuit:
             summary["circuit"] = circuit
         results.append(summary)
     return results
 
-def search_competitions(competitions: List[Dict[str, Any]], query: str, circuit: Optional[str] = None) -> List[Dict[str, Any]]:
+
+def search_competitions(
+    competitions: List[Dict[str, Any]], query: str, circuit: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """
     Searches for competitions by name (case-insensitive) and returns their summaries.
     """
     query = query.lower()
     filtered = [
-        c for c in competitions
-        if query in c.get("CompetitionName", "").lower()
+        c for c in competitions if query in c.get("CompetitionName", "").lower()
     ]
     return summarize_competitions(filtered, circuit=circuit)
 
-def filter_tournament_standings(data: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+
+def filter_tournament_standings(
+    data: Dict[str, Any],
+) -> Dict[str, List[Dict[str, Any]]]:
     """
     Filters and groups tournament standings by category.
 
@@ -75,30 +81,44 @@ def filter_tournament_standings(data: Dict[str, Any]) -> Dict[str, List[Dict[str
 
     return grouped_standings
 
-def simplify_standings(standings: Dict[str, List[Dict[str, Any]]]) -> Dict[str, List[Dict[str, Any]]]:
+
+def simplify_standings(
+    standings: Dict[str, List[Dict[str, Any]]],
+) -> Dict[str, List[Dict[str, Any]]]:
     """
     Simplifies the grouped standings by keeping only specific keys.
     """
     keys_to_keep = [
-        "TeamName", "Matches", "Wins", "Loss", "Tied", "NoResult",
-        "Points", "Draw", "ForTeams", "AgainstTeam", "NetRunRate",
-        "Quotient", "OrderNo", "MatchPoints"
+        "TeamName",
+        "Matches",
+        "Wins",
+        "Loss",
+        "Tied",
+        "NoResult",
+        "Points",
+        "Draw",
+        "ForTeams",
+        "AgainstTeam",
+        "NetRunRate",
+        "Quotient",
+        "OrderNo",
+        "MatchPoints",
     ]
 
     simplified = {}
     for category, teams in standings.items():
         simplified_teams = []
         for team in teams:
-            simplified_team = {
-                key: team.get(key)
-                for key in keys_to_keep
-            }
+            simplified_team = {key: team.get(key) for key in keys_to_keep}
             simplified_teams.append(simplified_team)
         simplified[category] = simplified_teams
 
     return simplified
 
-def filter_matches_by_status(data: Dict[str, Any], match_status: str) -> List[Dict[str, Any]]:
+
+def filter_matches_by_status(
+    data: Dict[str, Any], match_status: str
+) -> List[Dict[str, Any]]:
     """
     Filters the matches in the API response by their MatchStatus.
     Status can be 'upcoming', 'live', or 'post'.
@@ -107,6 +127,7 @@ def filter_matches_by_status(data: Dict[str, Any], match_status: str) -> List[Di
     target_status = match_status.lower()
 
     return [
-        match for match in match_details
+        match
+        for match in match_details
         if match.get("MatchStatus", "").lower() == target_status
     ]

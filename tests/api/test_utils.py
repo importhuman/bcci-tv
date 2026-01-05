@@ -1,25 +1,22 @@
-import pytest
 import json
 from bcci_tv.api.utils import (
     filter_live_competitions,
     filter_tournament_standings,
     simplify_standings,
-    filter_matches_by_status
+    filter_matches_by_status,
 )
 from bcci_tv.api.client import BCCIApiClient
 
+
 def test_filter_live_competitions():
     mock_data = {
-        "livecompetition": [
-            {"CompetitionID": "1"},
-            {"CompetitionID": "3"}
-        ],
+        "livecompetition": [{"CompetitionID": "1"}, {"CompetitionID": "3"}],
         "competition": [
             {"CompetitionID": "1", "name": "Live Match A"},
             {"CompetitionID": "2", "name": "Finished Match B"},
             {"CompetitionID": "3", "name": "Live Match C"},
-            {"CompetitionID": "4", "name": "Upcoming Match D"}
-        ]
+            {"CompetitionID": "4", "name": "Upcoming Match D"},
+        ],
     }
 
     result = filter_live_competitions(mock_data)
@@ -29,11 +26,13 @@ def test_filter_live_competitions():
     assert result[1]["CompetitionID"] == "3"
     assert all(c["CompetitionID"] in ["1", "3"] for c in result)
 
+
 def test_filter_live_competitions_empty():
     mock_data = {"livecompetition": [], "competition": [{"CompetitionID": "1"}]}
     assert filter_live_competitions(mock_data) == []
 
     assert filter_live_competitions({}) == []
+
 
 def test_filter_tournament_standings():
     # Read and parse JSONP fixture
@@ -57,9 +56,11 @@ def test_filter_tournament_standings():
     simplified_result = simplify_standings(filtered_result)
     assert simplified_result == expected_simplified_result
 
+
 def test_filter_tournament_standings_empty():
     assert filter_tournament_standings({}) == {}
     assert filter_tournament_standings({"category": []}) == {}
+
 
 def test_filter_matches_by_status():
     # Read and parse the international schedule fixture
