@@ -1,5 +1,2 @@
 # smithery.yaml
-version: "1.0"
-runtime: "python"
-packageManager: "uv"
-entrypoint: "bcci-tv-mcp"
+runtime: container
