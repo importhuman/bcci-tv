@@ -19,9 +19,6 @@ build-backend = "hatchling.build"
 [project.scripts]
 bcci-tv-mcp = "bcci_tv.server:main"
 
-[tool.smithery]
-server = "bcci_tv.mcp.server:mcp"
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/bcci_tv"]
 

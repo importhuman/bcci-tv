@@ -1,7 +1,5 @@
 # BCCI.tv API & MCP Server
 
-[![smithery badge](https://smithery.ai/badge/bcci-tv)](https://smithery.ai/server/bcci-tv)
-
 An unofficial Model Context Protocol (MCP) server and Python library for interacting with `bcci.tv` data. This package allows you to retrieve cricket tournament schedules, standings, and match summaries for Indian cricket.
 
 > **Disclaimer:** This is an **unofficial** package. It is not affiliated with, maintained by, or endorsed by the Board of Control for Cricket in India (BCCI). This tool is intended for personal and educational use only and is **not meant for commercial use**.
