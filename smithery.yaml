@@ -1,2 +1,8 @@
-# smithery.yaml
-runtime: container
+runtime: "container"
+build:
+  dockerfile: "Dockerfile"
+  dockerBuildPath: "."
+startCommand:
+  type: "stdio"
+  configSchema: {}
+  exampleConfig: {}
